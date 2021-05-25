@@ -1,13 +1,13 @@
 const test = require('ava');
 
 const { autorun, observable } = require('quarx');
-const { Stale, reactiveFlow } = require('../dist/index');
+const { Stale, computedAsync } = require('../dist/index');
 
 test.cb('simple reactive promise', t => {
   const logs = [];
   const log = msg => logs.push(msg);
 
-  const obs = reactiveFlow(() => Promise.resolve('I am done'));
+  const obs = computedAsync(() => Promise.resolve('I am done'));
 
   autorun(() => {
     try {
@@ -38,7 +38,7 @@ test.cb('multi-step flow', t => {
     return init + b.get();
   }
 
-  const obs = reactiveFlow(() => flow(0));
+  const obs = computedAsync(() => flow(0));
 
   autorun(() => {
     try {

@@ -50,9 +50,9 @@ function makeReactive(it, options = {}) {
 
 export class Stale extends Error {};
 
-export function reactiveFlow(evaluate, options = {}) {
+export function computedAsync(evaluate, options = {}) {
   const {
-    name = 'reactiveFlow',
+    name = 'computedAsync',
     equals = (a, b) => a === b,
   } = options;
 
