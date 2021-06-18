@@ -1,7 +1,20 @@
 const test = require('ava');
 
 const { autorun, observable } = require('quarx');
-const { Stale, computedAsync } = require('../dist/index');
+const { conclude } = require('conclure');
+const { delay } = require('conclure/effects');
+
+const { Stale, computedAsync, makeReactive } = require('../dist/index');
+
+function* delayed(ms, value) {
+  yield delay(ms);
+  return value;
+}
+
+function reactiveFlow(it) {
+  makeReactive(it).reportObserved();
+  return it;
+}
 
 test.cb('simple reactive promise', t => {
   const logs = [];
@@ -59,3 +72,28 @@ test.cb('multi-step flow', t => {
     }
   });
 })
+
+test.cb('delayed reactive function call', t => {
+  let count = 0;
+
+  const a = observable.box(5);
+
+  function* g() {
+    const f = yield delayed(1, () => a.get());
+    return f();
+  }
+
+  autorun(() => {
+    conclude(reactiveFlow(g()), (err, res) => {
+      if (err) throw err;
+      if (++count === 1) {
+        t.is(res, 5);
+        a.set(7);
+      }
+      else if (count === 2) {
+        t.is(res, 7);
+        t.end();
+      }
+    })
+  })
+});
