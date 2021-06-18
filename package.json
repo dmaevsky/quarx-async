@@ -17,7 +17,7 @@
     "test": "yarn build && ava -v"
   },
   "name": "conclure-quarx",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Reactive flows",
   "main": "dist/index.js",
   "directories": {

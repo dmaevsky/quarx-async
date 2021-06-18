@@ -3,7 +3,7 @@ import { conclude, inProgress, isFlow, isIterator } from 'conclure';
 
 const reactiveFlows = new WeakMap();
 
-function makeReactive(it, options = {}) {
+export function makeReactive(it, options = {}) {
   const { name = 'makeReactive' } = options;
 
   if (reactiveFlows.has(it)) {
