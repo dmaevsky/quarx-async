@@ -13,13 +13,14 @@
     ]
   },
   "scripts": {
-    "build": "esbuild index.js --format=cjs --outdir=dist",
+    "build": "esbuild src/index.js --format=cjs --outdir=dist",
     "test": "yarn build && ava -v"
   },
   "name": "conclure-quarx",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Reactive flows",
   "main": "dist/index.js",
+  "module": "src/index.js",
   "directories": {
     "test": "tests"
   },
