@@ -1,7 +1,7 @@
 {
   "dependencies": {
-    "conclure": "^1.2.0",
-    "quarx": "^3.1.0"
+    "conclure": "^1",
+    "quarx": "^3 >=3.3"
   },
   "devDependencies": {
     "ava": "^3.15.0",
@@ -17,7 +17,7 @@
     "test": "yarn build && ava -v"
   },
   "name": "conclure-quarx",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Reactive flows",
   "main": "dist/index.js",
   "module": "src/index.js",
