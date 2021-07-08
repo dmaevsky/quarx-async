@@ -1,10 +1,10 @@
-const test = require('ava');
+import test  from 'ava';
 
-const { autorun, observable } = require('quarx');
-const { conclude } = require('conclure');
-const { delay } = require('conclure/effects');
+import { autorun, observable } from 'quarx';
+import { conclude } from 'conclure';
+import { delay }  from 'conclure/effects';
 
-const { Stale, computedAsync, makeReactive } = require('../dist/index');
+import { Stale, computedAsync, makeReactive } from '../src/index.js';
 
 function* delayed(ms, value) {
   yield delay(ms);

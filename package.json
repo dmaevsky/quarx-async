@@ -1,11 +1,11 @@
 {
+  "type": "module",
   "dependencies": {
-    "conclure": "^1",
+    "conclure": "^2",
     "quarx": "^3 >=3.3"
   },
   "devDependencies": {
-    "ava": "^3.15.0",
-    "esbuild": "^0.12.2"
+    "ava": "^3.15.0"
   },
   "ava": {
     "files": [
@@ -13,13 +13,12 @@
     ]
   },
   "scripts": {
-    "build": "esbuild src/index.js --format=cjs --outdir=dist",
-    "test": "yarn build && ava -v"
+    "test": "ava -v"
   },
   "name": "conclure-quarx",
-  "version": "0.2.3",
+  "version": "0.3.0",
   "description": "Reactive flows",
-  "main": "dist/index.js",
+  "main": "src/index.js",
   "module": "src/index.js",
   "directories": {
     "test": "tests"

@@ -467,10 +467,10 @@ concat-map@0.0.1:
   resolved "https://registry.yarnpkg.com/concat-map/-/concat-map-0.0.1.tgz#d8a96bd77fd68df7793a73036a3ba0d5405d477b"
   integrity sha1-2Klr13/Wjfd5OnMDajug1UBdR3s=
 
-conclure@^1:
-  version "1.2.1"
-  resolved "https://registry.yarnpkg.com/conclure/-/conclure-1.2.1.tgz#dc782d7fbb84e20a2812c71c570dc70399fff089"
-  integrity sha512-SyNbU2SXS++yx/hMGHDO1ITQLc6YSb2TiuO+DF5O1cBtb/WHIwrW8IAZPYaCb2Wr0jHu2Xb4Y140TetkyRYXvg==
+conclure@^2:
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/conclure/-/conclure-2.0.0.tgz#ff20fb16a7f60642e6a035a19cc4bbd224d3c2b0"
+  integrity sha512-ULCdVJtK6g6oKKaY7Ezxil0/Y1yuewNO+/553otNTpfWvAA+Z/qj+WKswanOjLGD4ButZf78t/y8Orhx7YTQ5A==
 
 concordance@^5.0.1:
   version "5.0.4"
@@ -626,11 +626,6 @@ error-ex@^1.3.1:
   integrity sha512-7dFHNmqeFSEt2ZBsCriorKnn3Z2pj+fd9kmI6QoWw4//DL+icEBfc0U7qJCisqrTsKTjw4fNFy2pW9OqStD84g==
   dependencies:
     is-arrayish "^0.2.1"
-
-esbuild@^0.12.2:
-  version "0.12.2"
-  resolved "https://registry.yarnpkg.com/esbuild/-/esbuild-0.12.2.tgz#2914445954044dc8b859d4a59c288a725bbae7bb"
-  integrity sha512-VELu6ndrs0CWMV+Ts8GwO3S08JsFFrEuHCo8ekfqNAv/rHEK4UjoXvZOFyopHvRvQVsbTvqQWfBzYKVeLBm0WA==
 
 escalade@^3.1.1:
   version "3.1.1"
