@@ -1,13 +1,15 @@
-import { createAtom, autorun } from 'quarx';
+import { createAtom, autorun, Quarx } from 'quarx';
 import { conclude, inProgress, isFlow, isIterator } from 'conclure';
 
-const reactiveFlows = new WeakMap();
+if (!Quarx.reactiveFlows) {
+  Quarx.reactiveFlows = new WeakMap();
+}
 
 export function makeReactive(it, options = {}) {
   const { name = 'makeReactive' } = options;
 
-  if (reactiveFlows.has(it)) {
-    return reactiveFlows.get(it);
+  if (Quarx.reactiveFlows.has(it)) {
+    return Quarx.reactiveFlows.get(it);
   }
 
   const atom = createAtom(() => {
@@ -44,7 +46,7 @@ export function makeReactive(it, options = {}) {
     };
   }, { name });
 
-  reactiveFlows.set(it, atom);
+  Quarx.reactiveFlows.set(it, atom);
   return atom;
 }
 
@@ -54,6 +56,7 @@ export function computedAsync(evaluate, options = {}) {
   const {
     name = 'computedAsync',
     equals = (a, b) => a === b,
+    onStale
   } = options;
 
   let result, error, cancel;
@@ -105,6 +108,8 @@ export function computedAsync(evaluate, options = {}) {
       if (!atom.reportObserved()) {
         computation();
       };
+
+      if (error instanceof Stale && typeof onStale === 'function') return onStale();
       if (error) throw error;
       return result;
     }
