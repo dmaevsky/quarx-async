@@ -4,16 +4,11 @@ import { autorun, observable } from 'quarx';
 import { conclude } from 'conclure';
 import { delay }  from 'conclure/effects';
 
-import { Stale, computedAsync, makeReactive } from '../src/index.js';
+import { Stale, computedAsync, reactiveFlow } from '../src/index.js';
 
 function* delayed(ms, value) {
   yield delay(ms);
   return value;
-}
-
-function reactiveFlow(it) {
-  makeReactive(it).reportObserved();
-  return it;
 }
 
 test.cb('simple reactive promise', t => {
@@ -95,5 +90,5 @@ test.cb('delayed reactive function call', t => {
         t.end();
       }
     })
-  })
+  });
 });

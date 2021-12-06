@@ -5,6 +5,13 @@ if (!Quarx.reactiveFlows) {
   Quarx.reactiveFlows = new WeakMap();
 }
 
+export const reactiveFlow = it => {
+  if (isIterator(it)) {
+    makeReactive(it).reportObserved();
+  }
+  return it;
+}
+
 export function makeReactive(it, options = {}) {
   const { name = 'makeReactive' } = options;
 
