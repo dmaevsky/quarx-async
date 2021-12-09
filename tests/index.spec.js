@@ -3,6 +3,7 @@ import test  from 'ava';
 import { autorun, observable } from 'quarx';
 import { conclude } from 'conclure';
 import { delay }  from 'conclure/effects';
+import { all }  from 'conclure/combinators';
 
 import { Stale, computedAsync, reactiveFlow } from '../src/index.js';
 
@@ -90,5 +91,34 @@ test.cb('delayed reactive function call', t => {
         t.end();
       }
     })
+  })
+});
+
+test.cb('reactive combinators', t => {
+  let count = 0;
+
+  const a = [observable.box(5), observable.box(6)];
+
+  function* g(i) {
+    const f = yield delayed(1, () => a[i].get());
+    return f();
+  }
+
+  autorun(() => {
+    conclude(reactiveFlow(all([g(0), g(1)])), (err, res) => {
+      if (err) throw err;
+      if (++count === 1) {
+        t.deepEqual(res, [5, 6]);
+        a[0].set(7);
+      }
+      else if (count === 2) {
+        t.deepEqual(res, [7, 6]);
+        a[1].set(8);
+      }
+      else if (count === 3) {
+        t.deepEqual(res, [7, 8]);
+        t.end();
+      }
+    });
   });
 });

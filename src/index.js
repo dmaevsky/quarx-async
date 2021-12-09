@@ -1,14 +1,27 @@
 import { createAtom, autorun, Quarx } from 'quarx';
-import { conclude, inProgress, isFlow, isIterator } from 'conclure';
+import { conclude, inProgress, isFlow, isIterator, isEffect } from 'conclure';
+import * as Combinators from 'conclure/combinators';
 
 if (!Quarx.reactiveFlows) {
   Quarx.reactiveFlows = new WeakMap();
 }
 
+const supportedEffects = new Set(Object.values(Combinators));
+
 export const reactiveFlow = it => {
-  if (isIterator(it)) {
+  const flowType = isFlow(it);
+
+  if (flowType === isIterator) {
     makeReactive(it).reportObserved();
   }
+  else if (flowType === isEffect && supportedEffects.has(it.fn)) {
+    const flows = it.args[0];
+
+    for (let flow of (Array.isArray(flows) ? flows : Object.values(flows))) {
+      reactiveFlow(flow);
+    }
+  }
+
   return it;
 }
 
