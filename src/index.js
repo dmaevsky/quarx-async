@@ -45,9 +45,7 @@ export function makeReactive(it, options = {}) {
         try {
           result = originalNext.call(it, value);
 
-          if (isIterator(result.value)) {
-            makeReactive(result.value).reportObserved();
-          }
+          reactiveFlow(result.value);
         }
         catch (e) {
           error = e;
@@ -108,9 +106,7 @@ export function computedAsync(evaluate, options = {}) {
 
       const value = evaluate();
 
-      if (isIterator(value)) {
-        makeReactive(value).reportObserved();
-      }
+      reactiveFlow(value);
 
       cancel = conclude(value, set);
 
