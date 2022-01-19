@@ -5,12 +5,7 @@ import { conclude } from 'conclure';
 import { delay }  from 'conclure/effects';
 import { all }  from 'conclure/combinators';
 
-import { Stale, computedAsync, reactiveFlow } from '../src/index.js';
-
-function* delayed(ms, value) {
-  yield delay(ms);
-  return value;
-}
+import { Stale, computedAsync, reactiveFlow, autorunFlow } from '../src/index.js';
 
 test.cb('simple reactive promise', t => {
   const logs = [];
@@ -75,8 +70,8 @@ test.cb('delayed reactive function call', t => {
   const a = observable.box(5);
 
   function* g() {
-    const f = yield delayed(1, () => a.get());
-    return f();
+    yield delay(1);
+    return a.get();
   }
 
   autorun(() => {
@@ -100,8 +95,8 @@ test.cb('reactive combinators', t => {
   const a = [observable.box(5), observable.box(6)];
 
   function* g(i) {
-    const f = yield delayed(1, () => a[i].get());
-    return f();
+    yield delay(1);
+    return a[i].get();
   }
 
   autorun(() => {
@@ -120,5 +115,26 @@ test.cb('reactive combinators', t => {
         t.end();
       }
     });
+  });
+});
+
+test.cb('autorunFlow', t => {
+  let count = 0;
+
+  const a = observable.box(5);
+
+  autorunFlow(function* () {
+    yield delay(1);
+    const aValue = a.get();
+
+    if (++count === 1) {
+      t.is(aValue, 5);
+      yield delay(1);   // without the delay setting a would create a circular dep here
+      a.set(7);
+    }
+    else if (count === 2) {
+      t.is(aValue, 7);
+      t.end();
+    }
   });
 });

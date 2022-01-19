@@ -131,3 +131,22 @@ export function computedAsync(evaluate, options = {}) {
     }
   };
 }
+
+export function autorunFlow(computation, options = {}) {
+  const {
+    name = 'autorunFlow',
+  } = options;
+
+  let cancel;
+
+  const stop = autorun(() => {
+    if (cancel) cancel();
+
+    cancel = conclude(reactiveFlow(computation()), () => {});
+  }, { name });
+
+  return () => {
+    if (cancel) cancel();
+    stop();
+  }
+}
