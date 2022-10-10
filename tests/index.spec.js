@@ -7,7 +7,7 @@ import { all }  from 'conclure/combinators';
 
 import { Stale, computedAsync, reactiveFlow, autorunFlow } from '../src/index.js';
 
-test.cb('simple reactive promise', t => {
+test('simple reactive promise', t => new Promise(resolve => {
   const logs = [];
   const log = msg => logs.push(msg);
 
@@ -17,7 +17,7 @@ test.cb('simple reactive promise', t => {
     try {
       log(obs.get());
       t.deepEqual(logs, ['I am still running', 'I am done']);
-      t.end();
+      resolve();
     }
     catch (e) {
       if (e instanceof Stale) {
@@ -26,9 +26,9 @@ test.cb('simple reactive promise', t => {
       else console.error(e);
     }
   });
-});
+}));
 
-test.cb('multi-step flow', t => {
+test('multi-step flow', t => new Promise(resolve => {
   const logs = [];
   const log = msg => logs.push(msg);
 
@@ -54,7 +54,7 @@ test.cb('multi-step flow', t => {
       }
       else if (logs.length === 4) {
         t.deepEqual(logs, ['STALE', 47, 'STALE', 147]);
-        t.end();
+        resolve();
       }
     }
     catch (e) {
@@ -62,9 +62,9 @@ test.cb('multi-step flow', t => {
       else console.error(e);
     }
   });
-})
+}));
 
-test.cb('delayed reactive function call', t => {
+test('delayed reactive function call', t => new Promise(resolve => {
   let count = 0;
 
   const a = observable.box(5);
@@ -83,13 +83,13 @@ test.cb('delayed reactive function call', t => {
       }
       else if (count === 2) {
         t.is(res, 7);
-        t.end();
+        resolve();
       }
     })
   })
-});
+}));
 
-test.cb('reactive combinators', t => {
+test('reactive combinators', t => new Promise(resolve => {
   let count = 0;
 
   const a = [observable.box(5), observable.box(6)];
@@ -112,13 +112,13 @@ test.cb('reactive combinators', t => {
       }
       else if (count === 3) {
         t.deepEqual(res, [7, 8]);
-        t.end();
+        resolve();
       }
     });
   });
-});
+}));
 
-test.cb('autorunFlow', t => {
+test('autorunFlow', t => new Promise(resolve => {
   let count = 0;
 
   const a = observable.box(5);
@@ -134,7 +134,7 @@ test.cb('autorunFlow', t => {
     }
     else if (count === 2) {
       t.is(aValue, 7);
-      t.end();
+      resolve();
     }
   });
-});
+}));
