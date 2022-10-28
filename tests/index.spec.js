@@ -1,11 +1,12 @@
 import test  from 'ava';
 
-import { autorun, observable } from 'quarx';
-import { conclude } from 'conclure';
+import { autorun } from 'quarx';
+import { box } from 'quarx/box';
+import { conclude, isFlow } from 'conclure';
 import { delay }  from 'conclure/effects';
 import { all }  from 'conclure/combinators';
 
-import { Stale, computedAsync, reactiveFlow, autorunFlow } from '../src/index.js';
+import { computedAsync, reactiveFlow, autorunFlow } from '../src/index.js';
 
 test('simple reactive promise', t => new Promise(resolve => {
   const logs = [];
@@ -20,7 +21,7 @@ test('simple reactive promise', t => new Promise(resolve => {
       resolve();
     }
     catch (e) {
-      if (e instanceof Stale) {
+      if (isFlow(e)) {
         log('I am still running');
       }
       else console.error(e);
@@ -32,7 +33,7 @@ test('multi-step flow', t => new Promise(resolve => {
   const logs = [];
   const log = msg => logs.push(msg);
 
-  const b = observable.box(42);
+  const b = box(42);
 
   function* flow(init) {
     for (let i = 0; i < 5; i++) {
@@ -58,7 +59,7 @@ test('multi-step flow', t => new Promise(resolve => {
       }
     }
     catch (e) {
-      if (e instanceof Stale) log('STALE');
+      if (isFlow(e)) log('STALE');
       else console.error(e);
     }
   });
@@ -67,7 +68,7 @@ test('multi-step flow', t => new Promise(resolve => {
 test('delayed reactive function call', t => new Promise(resolve => {
   let count = 0;
 
-  const a = observable.box(5);
+  const a = box(5);
 
   function* g() {
     yield delay(1);
@@ -92,7 +93,7 @@ test('delayed reactive function call', t => new Promise(resolve => {
 test('reactive combinators', t => new Promise(resolve => {
   let count = 0;
 
-  const a = [observable.box(5), observable.box(6)];
+  const a = [box(5), box(6)];
 
   function* g(i) {
     yield delay(1);
@@ -121,7 +122,7 @@ test('reactive combinators', t => new Promise(resolve => {
 test('autorunFlow', t => new Promise(resolve => {
   let count = 0;
 
-  const a = observable.box(5);
+  const a = box(5);
 
   autorunFlow(function* () {
     yield delay(1);

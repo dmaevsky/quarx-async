@@ -1,27 +1,22 @@
 import { createAtom, autorun, Quarx } from 'quarx';
 import { conclude, inProgress, isFlow, isIterator, isEffect } from 'conclure';
-import * as Combinators from 'conclure/combinators';
 
 if (!Quarx.reactiveFlows) {
   Quarx.reactiveFlows = new WeakMap();
 }
 
-const supportedEffects = new Set(Object.values(Combinators));
-
 export const reactiveFlow = it => {
   const flowType = isFlow(it);
 
-  if (flowType === isIterator) {
+  if (!flowType && it && typeof it === 'object') {
+    (Array.isArray(it) ? it : Object.values(it)).forEach(reactiveFlow);
+  }
+  else if (flowType === isIterator) {
     makeReactive(it).reportObserved();
   }
-  else if (flowType === isEffect && supportedEffects.has(it.fn)) {
-    const flows = it.args[0];
-
-    for (let flow of (Array.isArray(flows) ? flows : Object.values(flows))) {
-      reactiveFlow(flow);
-    }
+  else if (flowType === isEffect) {
+    reactiveFlow(it.args);
   }
-
   return it;
 }
 
@@ -50,7 +45,7 @@ export function makeReactive(it, options = {}) {
         catch (e) {
           error = e;
         }
-      });
+      }, { name: `${name}[${step}]`});
 
       steps.push(dispose);
 
@@ -67,8 +62,6 @@ export function makeReactive(it, options = {}) {
   Quarx.reactiveFlows.set(it, atom);
   return atom;
 }
-
-export class Stale extends Error {};
 
 export function computedAsync(evaluate, options = {}) {
   const {
@@ -111,7 +104,7 @@ export function computedAsync(evaluate, options = {}) {
       cancel = conclude(value, set);
 
       if (isFlow(value) && inProgress(value)) {
-        set(new Stale(name));
+        set(value);
       }
     }
     catch (err) {
@@ -125,7 +118,7 @@ export function computedAsync(evaluate, options = {}) {
         computation();
       };
 
-      if (error instanceof Stale && typeof onStale === 'function') return onStale();
+      if (isFlow(error) && typeof onStale === 'function') return onStale(error);
       if (error) throw error;
       return result;
     }
@@ -133,16 +126,17 @@ export function computedAsync(evaluate, options = {}) {
 }
 
 export function autorunFlow(computation, options = {}) {
-  const {
-    name = 'autorunFlow',
-  } = options;
+  const { name = 'autorunFlow' } = options;
+  const onError = options.onError || function(e) {
+    Quarx.error(`[Quarx-async]: uncaught exception in ${name}:`, e);
+  }
 
   let cancel;
 
   const stop = autorun(() => {
     if (cancel) cancel();
 
-    cancel = conclude(reactiveFlow(computation()), () => {});
+    cancel = conclude(reactiveFlow(computation()), e => e && onError(e));
   }, { name });
 
   return () => {

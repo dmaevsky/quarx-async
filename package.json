@@ -1,11 +1,11 @@
 {
   "name": "conclure-quarx",
-  "version": "0.5.6",
+  "version": "0.6.0",
   "description": "Reactive flows",
   "type": "module",
   "dependencies": {
     "conclure": "^2, >=2.1.0",
-    "quarx": "^4, >=4.1.1"
+    "quarx": "^5"
   },
   "devDependencies": {
     "ava": "^4.3.3"
