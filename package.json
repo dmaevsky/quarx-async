@@ -3,6 +3,12 @@
   "version": "0.6.0",
   "description": "Reactive flows",
   "type": "module",
+  "main": "src/index.js",
+  "module": "src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./computed": "./src/computed-async.js"
+  },
   "dependencies": {
     "conclure": "^2, >=2.1.0",
     "quarx": "^5"
@@ -18,8 +24,6 @@
   "scripts": {
     "test": "ava -v"
   },
-  "main": "src/index.js",
-  "module": "src/index.js",
   "directories": {
     "test": "tests"
   },

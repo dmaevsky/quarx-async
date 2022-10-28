@@ -1,5 +1,5 @@
 import { createAtom, autorun, Quarx } from 'quarx';
-import { conclude, inProgress, isFlow, isIterator, isEffect } from 'conclure';
+import { conclude, isFlow, isIterator, isEffect } from 'conclure';
 
 if (!Quarx.reactiveFlows) {
   Quarx.reactiveFlows = new WeakMap();
@@ -61,68 +61,6 @@ export function makeReactive(it, options = {}) {
 
   Quarx.reactiveFlows.set(it, atom);
   return atom;
-}
-
-export function computedAsync(evaluate, options = {}) {
-  const {
-    name = 'computedAsync',
-    equals = (a, b) => a === b,
-    onStale
-  } = options;
-
-  let result, error, cancel;
-
-  function start() {
-    const stop = autorun(computation);
-
-    return () => {
-      if (cancel) cancel();
-      cancel = undefined;
-      stop();
-    };
-  }
-
-  const atom = createAtom(start, { name });
-
-  function set(e, r) {
-    error = e;
-    if (!error) {
-      if (equals(result, r)) return;
-      result = r;
-    }
-    atom.reportChanged();
-  }
-
-  function computation() {
-    try {
-      if (cancel) cancel();
-
-      const value = evaluate();
-
-      reactiveFlow(value);
-
-      cancel = conclude(value, set);
-
-      if (isFlow(value) && inProgress(value)) {
-        set(value);
-      }
-    }
-    catch (err) {
-      set(err);
-    }
-  }
-
-  return {
-    get: () => {
-      if (!atom.reportObserved()) {
-        computation();
-      };
-
-      if (isFlow(error) && typeof onStale === 'function') return onStale(error);
-      if (error) throw error;
-      return result;
-    }
-  };
 }
 
 export function autorunFlow(computation, options = {}) {
