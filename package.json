@@ -1,6 +1,6 @@
 {
   "name": "quarx-async",
-  "version": "1.0.0",
+  "version": "0.9.0",
   "description": "Async reactivity engine",
   "type": "module",
   "main": "src/core.js",
