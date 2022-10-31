@@ -1,17 +1,17 @@
 {
-  "name": "conclure-quarx",
-  "version": "0.6.0",
-  "description": "Reactive flows",
+  "name": "quarx-async",
+  "version": "1.0.0",
+  "description": "Async reactivity engine",
   "type": "module",
-  "main": "src/index.js",
-  "module": "src/index.js",
+  "main": "src/core.js",
+  "module": "src/core.js",
   "exports": {
-    ".": "./src/index.js",
-    "./computed": "./src/computed-async.js"
+    ".": "./src/core.js",
+    "./computed": "./src/computed.js"
   },
   "dependencies": {
     "conclure": "^2, >=2.1.0",
-    "quarx": "^5"
+    "quarx": "^5, >=5.1.0"
   },
   "devDependencies": {
     "ava": "^4.3.3"

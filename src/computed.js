@@ -1,6 +1,6 @@
 import { createAtom, autorun } from 'quarx';
 import { conclude, inProgress, isFlow } from 'conclure';
-import { reactiveFlow } from './index.js';
+import { reactiveFlow } from './core.js';
 
 export function computedAsync(evaluate, options = {}) {
   const {
