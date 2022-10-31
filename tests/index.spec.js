@@ -6,7 +6,7 @@ import { conclude } from 'conclure';
 import { delay }  from 'conclure/effects';
 import { all }  from 'conclure/combinators';
 
-import { reactiveFlow, autorunFlow } from '../src/index.js';
+import { reactiveFlow, autorunAsync } from '../src/core.js';
 
 test('delayed reactive function call', t => new Promise(resolve => {
   let count = 0;
@@ -62,12 +62,12 @@ test('reactive combinators', t => new Promise(resolve => {
   });
 }));
 
-test('autorunFlow', t => new Promise(resolve => {
+test('autorunAsync', t => new Promise(resolve => {
   let count = 0;
 
   const a = box(5);
 
-  autorunFlow(function* () {
+  autorunAsync(function* () {
     yield delay(1);
     const aValue = a.get();
 

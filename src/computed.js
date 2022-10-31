@@ -1,63 +1,40 @@
-import { createAtom, autorun } from 'quarx';
-import { conclude, inProgress, isFlow } from 'conclure';
-import { reactiveFlow } from './core.js';
+import { createAtom } from 'quarx';
+import { isFlow, finished, getResult } from 'conclure';
+import { autorunAsync } from './core.js';
 
 export function computedAsync(evaluate, options = {}) {
   const {
     name = 'computedAsync',
-    equals = (a, b) => a === b,
-    onStale
+    equals = (a, b) => a === b
   } = options;
 
-  let result, error, cancel;
-
-  function start() {
-    const stop = autorun(computation);
-
-    return () => {
-      if (cancel) cancel();
-      cancel = undefined;
-      stop();
-    };
-  }
-
-  const atom = createAtom(start, { name });
+  let result, error;
 
   function set(e, r) {
-    error = e;
-    if (!error) {
-      if (equals(result, r)) return;
-      result = r;
-    }
+    if (e && error === e) return;
+    if (!e && equals(result, r)) return;
+
+    [result, error] = [r, e];
     atom.reportChanged();
   }
 
-  function computation() {
-    try {
-      if (cancel) cancel();
-
-      const value = evaluate();
-
-      reactiveFlow(value);
-
-      cancel = conclude(value, set);
-
-      if (isFlow(value) && inProgress(value)) {
-        set(value);
-      }
-    }
-    catch (err) {
-      set(err);
-    }
+  function* computation() {
+    set(null, yield evaluate());
   }
 
-  return {
-    get: () => {
-      if (!atom.reportObserved()) {
-        computation();
-      };
+  const atom = createAtom(
+    () => autorunAsync(computation, { name, onError: set, onStale: set }),
+    { name: 'result:' + name }
+  );
 
-      if (isFlow(error) && typeof onStale === 'function') return onStale(error);
+  return {
+    get() {
+      if (!atom.reportObserved()) {
+        const it = evaluate();
+        if (!isFlow(it)) return it;
+        if (finished(it)) return getResult(it);
+        throw it;
+      };
       if (error) throw error;
       return result;
     }

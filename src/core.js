@@ -1,5 +1,5 @@
 import { createAtom, autorun, Quarx } from 'quarx';
-import { conclude, isFlow, isIterator, isEffect } from 'conclure';
+import { conclude, inProgress, isFlow, isIterator, isEffect } from 'conclure';
 
 if (!Quarx.reactiveFlows) {
   Quarx.reactiveFlows = new WeakMap();
@@ -63,19 +63,28 @@ export function makeReactive(it, options = {}) {
   return atom;
 }
 
-export function autorunFlow(computation, options = {}) {
-  const { name = 'autorunFlow' } = options;
+export function autorunAsync(computation, options = {}) {
+  const { name = 'autorunAsync' } = options;
+
   const onError = options.onError || function(e) {
     Quarx.error(`[Quarx-async]: uncaught exception in ${name}:`, e);
   }
+
+  const onStale = options.onStale || (() => {});
 
   let cancel;
 
   const stop = autorun(() => {
     if (cancel) cancel();
 
-    cancel = conclude(reactiveFlow(computation()), e => e && onError(e));
-  }, { name });
+    const it = computation();
+
+    if (isFlow(it)) {
+      cancel = conclude(reactiveFlow(it), e => e && onError(e));
+      if (inProgress(it)) onStale(it);
+    }
+    else cancel = null;
+  }, { name, onError });
 
   return () => {
     if (cancel) cancel();

@@ -4,7 +4,7 @@ import { autorun } from 'quarx';
 import { box } from 'quarx/box';
 import { isFlow } from 'conclure';
 
-import { computedAsync } from '../src/computed-async.js';
+import { computedAsync } from '../src/computed.js';
 
 test('simple reactive promise', t => new Promise(resolve => {
   const logs = [];
