@@ -6,7 +6,7 @@ import { conclude } from 'conclure';
 import { delay }  from 'conclure/effects';
 import { all }  from 'conclure/combinators';
 
-import { reactiveFlow, autorunAsync } from '../src/core.js';
+import { reportObservedFlow, autorunAsync } from '../src/core.js';
 
 test('delayed reactive function call', t => new Promise(resolve => {
   let count = 0;
@@ -19,7 +19,7 @@ test('delayed reactive function call', t => new Promise(resolve => {
   }
 
   autorun(() => {
-    conclude(reactiveFlow(g()), (err, res) => {
+    conclude(reportObservedFlow(g()), (err, res) => {
       if (err) throw err;
       if (++count === 1) {
         t.is(res, 5);
@@ -44,7 +44,7 @@ test('reactive combinators', t => new Promise(resolve => {
   }
 
   autorun(() => {
-    conclude(reactiveFlow(all([g(0), g(1)])), (err, res) => {
+    conclude(reportObservedFlow(all([g(0), g(1)])), (err, res) => {
       if (err) throw err;
       if (++count === 1) {
         t.deepEqual(res, [5, 6]);

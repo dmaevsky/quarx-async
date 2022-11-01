@@ -5,17 +5,17 @@ if (!Quarx.reactiveFlows) {
   Quarx.reactiveFlows = new WeakMap();
 }
 
-export const reactiveFlow = (it, recursive = false) => {
+export const reportObservedFlow = (it, recursive = false) => {
   const flowType = isFlow(it);
 
   if (recursive && !flowType && it && typeof it === 'object') {
-    (Array.isArray(it) ? it : Object.values(it)).forEach(value => reactiveFlow(value, true));
+    (Array.isArray(it) ? it : Object.values(it)).forEach(value => reportObservedFlow(value, true));
   }
   else if (flowType === isIterator) {
     makeReactive(it).reportObserved();
   }
   else if (flowType === isEffect) {
-    reactiveFlow(it.args, true);
+    reportObservedFlow(it.args, true);
   }
   return it;
 }
@@ -40,7 +40,7 @@ export function makeReactive(it, options = {}) {
         try {
           result = originalNext.call(it, value);
 
-          reactiveFlow(result.value);
+          reportObservedFlow(result.value);
         }
         catch (e) {
           error = e;
@@ -80,7 +80,7 @@ export function autorunAsync(computation, options = {}) {
     const it = computation();
 
     if (isFlow(it)) {
-      cancel = conclude(reactiveFlow(it), e => e && onError(e));
+      cancel = conclude(reportObservedFlow(it), e => e && onError(e));
       if (inProgress(it)) onStale(it);
     }
     else cancel = null;
