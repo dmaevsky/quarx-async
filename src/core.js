@@ -5,17 +5,18 @@ if (!Quarx.reactiveFlows) {
   Quarx.reactiveFlows = new WeakMap();
 }
 
-export const reportObservedFlow = (it, recursive = false) => {
+export const reportObservedFlow = it => {
   const flowType = isFlow(it);
 
-  if (recursive && !flowType && it && typeof it === 'object') {
-    (Array.isArray(it) ? it : Object.values(it)).forEach(value => reportObservedFlow(value, true));
-  }
-  else if (flowType === isIterator) {
+  if (flowType === isIterator) {
     makeReactive(it).reportObserved();
   }
-  else if (flowType === isEffect) {
-    reportObservedFlow(it.args, true);
+  else if (flowType === isEffect && it.fn.combinator) {
+    const flows = it.args[0];
+
+    for (let flow of (Array.isArray(flows) ? flows : Object.values(flows))) {
+      reportObservedFlow(flow);
+    }
   }
   return it;
 }

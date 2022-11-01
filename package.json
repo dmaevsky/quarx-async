@@ -11,7 +11,7 @@
     "./adapters": "./src/adapters.js"
   },
   "dependencies": {
-    "conclure": "^2, >=2.1.0",
+    "conclure": "^2, >=2.2.0",
     "quarx": "^5, >=5.2.0"
   },
   "devDependencies": {
