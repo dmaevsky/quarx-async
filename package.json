@@ -1,6 +1,6 @@
 {
   "name": "quarx-async",
-  "version": "0.10.0",
+  "version": "0.10.1",
   "description": "Async reactivity engine",
   "type": "module",
   "main": "src/core.js",
@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "conclure": "^2, >=2.2.0",
-    "quarx": "^5, >=5.2.0"
+    "quarx": "^5, >=5.2.1"
   },
   "devDependencies": {
     "ava": "^4.3.3"
