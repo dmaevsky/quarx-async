@@ -30,3 +30,27 @@ test('subscribableAsync and reactive combinators', async t => {
   t.deepEqual(results, ['STALE', 32, 77]);
   off();
 });
+
+test('Stale flows are pushed into onStale channel in subscribableAsync', async t => {
+  const p = Promise.resolve();
+  const step = box(0);
+
+  function* evaluate() {
+    if (step.get() === 0) throw p;
+    else if (step.get() === 1) throw 'Foo error';
+    yield p;
+    return 42;
+  }
+
+  const { subscribe } = subscribableAsync(evaluate);
+
+  const results = [];
+  const off = subscribe(r => results.push(r), e => results.push(e), _ => results.push('STALE'));
+
+  step.set(1);
+  step.set(2);
+  await p;
+
+  t.deepEqual(results, ['STALE', 'Foo error', 'STALE', 42]);
+  off();
+});

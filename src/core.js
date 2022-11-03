@@ -81,7 +81,7 @@ export function autorunAsync(computation, options = {}) {
     const it = computation();
 
     if (isFlow(it)) {
-      cancel = conclude(reportObservedFlow(it), e => e && onError(e));
+      cancel = conclude(reportObservedFlow(it), e => e && (isFlow(e) ? onStale(e) : onError(e)));
       if (inProgress(it)) onStale(it);
     }
     else cancel = null;
