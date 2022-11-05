@@ -8,5 +8,5 @@ export function computedAsync(evaluate, options = {}) {
   } = options;
 
   const subs = subscribableAsync(evaluate, { name });
-  return toObservable(subs, { name: 'result:' + name, equals });
+  return toObservable(subs, { name: `(computedAsync ${name})`, equals });
 }

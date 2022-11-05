@@ -5,17 +5,22 @@ if (!Quarx.reactiveFlows) {
   Quarx.reactiveFlows = new WeakMap();
 }
 
-export const reportObservedFlow = it => {
+export function reportObservedFlow(it, options = {}) {
+  const { name = 'reportObservedFlow' } = options;
+
   const flowType = isFlow(it);
 
   if (flowType === isIterator) {
-    makeReactive(it).reportObserved();
+    makeReactive(it, options).reportObserved();
   }
   else if (flowType === isEffect && it.fn.combinator) {
     const flows = it.args[0];
 
-    for (let flow of (Array.isArray(flows) ? flows : Object.values(flows))) {
-      reportObservedFlow(flow);
+    for (let key in flows) {
+      reportObservedFlow(flows[key], {
+        ...options,
+        name: `${name}.${it.fn.combinator}[${key}]`
+      });
     }
   }
   return it;
@@ -35,18 +40,22 @@ export function makeReactive(it, options = {}) {
     it.next = value => {
       let result, error;
       let step = steps.length;
+      const stepName = `${name}.${step}`;
 
       const dispose = autorun(() => {
         if (step !== steps.length) return atom.reportChanged();
         try {
           result = originalNext.call(it, value);
 
-          reportObservedFlow(result.value);
+          reportObservedFlow(result.value, { name: stepName });
         }
         catch (e) {
           error = e;
         }
-      }, { name: `${name}[${step}]`});
+      }, {
+        name: stepName,
+        onError: () => atom.reportChanged()
+      });
 
       steps.push(dispose);
 
@@ -58,20 +67,22 @@ export function makeReactive(it, options = {}) {
       it.next = originalNext;
       for (let dispose of steps) dispose();
     };
-  }, { name });
+  }, { name: name + '.*' });
 
   Quarx.reactiveFlows.set(it, atom);
   return atom;
 }
 
+const split = (onError, onStale) => e => isFlow(e) ? onStale(e) : onError(e);
+
 export function autorunAsync(computation, options = {}) {
   const { name = 'autorunAsync' } = options;
 
-  const onError = options.onError || function(e) {
-    Quarx.error(`[Quarx-async]: uncaught exception in ${name}:`, e);
-  }
-
   const onStale = options.onStale || (() => {});
+
+  const onError = split(options.onError || function(e) {
+    Quarx.error('[Quarx ERROR]', 'async computation', name, e);
+  }, onStale);
 
   let cancel;
 
@@ -81,7 +92,7 @@ export function autorunAsync(computation, options = {}) {
     const it = computation();
 
     if (isFlow(it)) {
-      cancel = conclude(reportObservedFlow(it), e => e && (isFlow(e) ? onStale(e) : onError(e)));
+      cancel = conclude(reportObservedFlow(it, { name }), e => e && onError(e));
       if (inProgress(it)) onStale(it);
     }
     else cancel = null;
