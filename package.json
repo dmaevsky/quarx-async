@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "conclure": "^2, >=2.2.0",
-    "quarx": "^5, >=5.3.0"
+    "quarx": "^5, >=5.4.0"
   },
   "devDependencies": {
     "ava": "^4.3.3"
