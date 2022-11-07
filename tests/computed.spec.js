@@ -99,28 +99,21 @@ test('circular dependency detection, async version', async t => {
   await p2;
 
   // c1 and c2 are mutually locked in a STALE state -> no updates of results after await
-  t.deepEqual(results, ['STALE', 11, 'STALE']);
+  t.deepEqual(results, ['STALE', 11, 'STALE', 'STALE']);
 
   latch.set(42);
-  t.deepEqual(results, ['STALE', 11, 'STALE', 48]);
+  t.deepEqual(results, ['STALE', 11, 'STALE', 'STALE', 48]);
 
   const originalQuarxError = Quarx.error;
 
-  const invalidateErrors = [];
-  Quarx.error = (...args) => invalidateErrors.push(args);
+  const quarxErrors = [];
+  Quarx.error = (...args) => quarxErrors.push(args);
 
   latch.set(0);   // BOOM
-  t.deepEqual(results, ['STALE', 11, 'STALE', 48, '[Quarx ERROR]:invalidate hydrated:b:a.1']);
-
-  // It is impossible to collect the full stack when Type 2 cycle is detected (cycle appearing upon invalidation of some computation)
-  // However, it is possible to instrument Quarx.error to collect errors propagated to observing computations, as follows
+  t.deepEqual(results, ['STALE', 11, 'STALE', 'STALE', 48, '[Quarx ERROR]:cycle detected:b:b.1:a:a.1:b']);
 
   Quarx.error = originalQuarxError;
 
-  t.is(invalidateErrors.length, 5);
-  t.true(invalidateErrors.every(([, event,, fromName]) => event === 'invalidate hydrated' && fromName === 'a.1'));
-
-  t.deepEqual(invalidateErrors.map(([, , name]) => name), ['b.0.1', 'b.0', 'b', 'a.0.1', 'a.0']);
-
+  t.is(quarxErrors.length, 4);
   off();
 });

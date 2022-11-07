@@ -1,105 +1,190 @@
 import { createAtom, autorun, Quarx } from 'quarx';
 import { conclude, inProgress, isFlow, isIterator, isEffect } from 'conclure';
 
-if (!Quarx.reactiveFlows) {
-  Quarx.reactiveFlows = new WeakMap();
-}
+const reactive = Symbol.for('@@quarx-async-reactive');
+const stale = Symbol.for('@@quarx-async-stale');
 
-export function reportObservedFlow(it, options = {}) {
-  const { name = 'reportObservedFlow' } = options;
+const noop = () => {};
 
+function getProcessor(it) {
   const flowType = isFlow(it);
 
-  if (flowType === isIterator) {
-    makeReactive(it, options).reportObserved();
-  }
-  else if (flowType === isEffect && it.fn.combinator) {
-    const flows = it.args[0];
-
-    for (let key in flows) {
-      reportObservedFlow(flows[key], {
-        ...options,
-        name: `${name}.${it.fn.combinator}[${key}]`
-      });
-    }
-  }
-  return it;
+  if (flowType === isIterator) return makeReactiveIterator;
+  if (flowType === isEffect && it.fn.combinator) return makeReactiveEffect;
 }
 
-export function makeReactive(it, options = {}) {
-  const { name = 'makeReactive' } = options;
+export function makeReactive(it, callback, options = {}) {
+  const processor = getProcessor(it);
+  if (!processor) return noop;
 
-  if (Quarx.reactiveFlows.has(it)) {
-    return Quarx.reactiveFlows.get(it);
+  if (stale in it) {
+    callback(it[stale]);
+    return noop;
   }
 
-  const atom = createAtom(() => {
-    const originalNext = it.next;
-    const steps = [];
+  if (reactive in it) {
+    const subscribe = it[reactive];
+    return subscribe(callback);
+  }
 
-    it.next = value => {
-      let result, error;
-      let step = steps.length;
-      const stepName = `${name}.${step}`;
+  const subscribers = new Set();
 
-      const dispose = autorun(() => {
-        if (step !== steps.length) return atom.reportChanged();
-        try {
-          result = originalNext.call(it, value);
+  const onInvalidate = reason => {
+    if (stale in it) return;
 
-          reportObservedFlow(result.value, { name: stepName });
-        }
-        catch (e) {
-          error = e;
-        }
-      }, {
-        name: stepName,
-        onError: () => atom.reportChanged()
-      });
+    it[stale] = reason;
+    delete it[reactive];
 
-      steps.push(dispose);
+    for (let cb of subscribers) cb(reason);
+  }
 
-      if (error) throw error;
-      return result;
-    };
+  function subscribe(cb) {
+    subscribers.add(cb);
 
     return () => {
-      it.next = originalNext;
-      for (let dispose of steps) dispose();
-    };
-  }, { name: name + '.*' });
+      const deleted = subscribers.delete(cb);
 
-  Quarx.reactiveFlows.set(it, atom);
-  return atom;
+      if (deleted && subscribers.size === 0) {
+        delete it[reactive];
+        cleanup();
+      }
+    }
+  }
+
+  it[reactive] = subscribe;
+
+  const unsubscribe = subscribe(callback);
+
+  const cleanup = processor(it, onInvalidate, options);
+
+  return unsubscribe;
 }
 
-const split = (onError, onStale) => e => isFlow(e) ? onStale(e) : onError(e);
+function makeReactiveEffect(it, callback, { name = 'reactiveEffect' }) {
+  const subscriptions = [];
+  const flows = it.args[0];
 
-export function autorunAsync(computation, options = {}) {
-  const { name = 'autorunAsync' } = options;
+  for (let key in flows) {
+    subscriptions.push(makeReactive(flows[key], callback, {
+      name: `${name}.${it.fn.combinator}[${key}]`
+    }));
+  }
 
-  const onStale = options.onStale || (() => {});
+  return () => subscriptions.forEach(off => off());
+}
 
-  const onError = split(options.onError || function(e) {
-    Quarx.error('[Quarx ERROR]', 'async computation', name, e);
-  }, onStale);
+function makeReactiveIterator(it, callback, { name = 'reactiveIterator' }) {
+  const subscriptions = [];
+  let step = 0;
 
-  let cancel;
+  const reactiveShell = original => (...args) => {
+    let result, error;
+    const stepName = `${name}.${step++}`;
 
-  const stop = autorun(() => {
-    if (cancel) cancel();
+    const dispose = autorun(() => {
+      try {
+        result = original.call(it, ...args);
+      }
+      catch (e) {
+        error = e;
+      }
+    }, {
+      name: stepName,
+      once: true,
+      onError: callback
+    });
 
-    const it = computation();
+    subscriptions.push(dispose);
 
-    if (isFlow(it)) {
-      cancel = conclude(reportObservedFlow(it, { name }), e => e && onError(e));
-      if (inProgress(it)) onStale(it);
-    }
-    else cancel = null;
-  }, { name, onError });
+    if (error) throw error;
+
+    subscriptions.push(makeReactive(result.value, callback, { name: stepName }));
+    return result;
+  }
+
+  const originalNext = it.next;
+  const originalThrow = it.throw;
+
+  it.next = reactiveShell(originalNext);
+  it.throw = reactiveShell(originalThrow);
 
   return () => {
-    if (cancel) cancel();
-    stop();
+    it.next = originalNext;
+    it.throw = originalThrow;
+    for (let dispose of subscriptions) dispose();
   }
+}
+
+const splitInto = (onError, onStale) => e => isFlow(e) ? onStale(e) : onError(e);
+
+export function subscribableAsync(evaluate, options = {}) {
+  const {
+    name = 'subscribableAsync',
+    maxRestarts = 20
+  } = options;
+
+  return {
+    subscribe(
+      subscriber,
+      onError = options.onError,
+      onStale = options.onStale
+    ) {
+      const onErrorStale = splitInto(onError, onStale);
+
+      let cancel;
+      let restarts = [];
+
+      function cleanup() {
+        for (let off of restarts) off();
+        if (cancel) cancel();
+      }
+
+      const restartAtom = createAtom(() => cleanup, {
+        name: `(restart ${name})`
+      });
+
+      return autorun(() => {
+        if (restarts.length >= maxRestarts) {
+          return onError(new Error(`Maximum number of flow restarts (${maxRestarts}) exceeded in ${name}`));
+        }
+
+        if (cancel) cancel();
+
+        const it = evaluate();
+
+        if (isFlow(it)) {
+          restartAtom.reportObserved();
+
+          restarts.push(makeReactive(it, () => restartAtom.reportChanged(), { name }));
+
+          cancel = conclude(it, (error, result) => {
+            const lastRun = restarts.pop();
+
+            for (let off of restarts) off();
+            restarts = [lastRun];
+
+            if (error) onErrorStale(error);
+            else subscriber(result);
+          });
+
+          if (inProgress(it)) onStale(it);
+        }
+        else {
+          cancel = null;
+          subscriber(it);
+        }
+      }, { name, onError: onErrorStale });
+    }
+  }
+}
+
+export function autorunAsync(computation, options = {}) {
+  const onError = options.onError || function(e) {
+    Quarx.error('[Quarx ERROR]', 'async computation', options.name || 'autorunAsync', e);
+  }
+
+  const onStale = options.onStale || noop;
+
+  const { subscribe } = subscribableAsync(computation, options)
+  return subscribe(noop, onError, onStale);
 }

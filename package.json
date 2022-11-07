@@ -1,18 +1,17 @@
 {
   "name": "quarx-async",
-  "version": "0.10.3",
+  "version": "0.11.0",
   "description": "Async reactivity engine",
   "type": "module",
   "main": "src/core.js",
   "module": "src/core.js",
   "exports": {
     ".": "./src/core.js",
-    "./computed": "./src/computed.js",
-    "./adapters": "./src/adapters.js"
+    "./computed": "./src/computed.js"
   },
   "dependencies": {
     "conclure": "^2, >=2.2.0",
-    "quarx": "^5, >=5.2.3"
+    "quarx": "^5, >=5.3.0"
   },
   "devDependencies": {
     "ava": "^4.3.3"

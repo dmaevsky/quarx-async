@@ -1,5 +1,5 @@
 import { toObservable } from 'quarx/adapters';
-import { subscribableAsync } from './adapters.js';
+import { subscribableAsync } from './core.js';
 
 export function computedAsync(evaluate, options = {}) {
   const {
