@@ -126,8 +126,8 @@ export function subscribableAsync(evaluate, options = {}) {
   return {
     subscribe(
       subscriber,
-      onError = options.onError,
-      onStale = options.onStale
+      onError = options.onError || console.error,
+      onStale = options.onStale || noop
     ) {
       const onErrorStale = splitInto(onError, onStale);
 
