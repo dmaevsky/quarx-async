@@ -14,15 +14,10 @@
     "quarx": "^5, >=5.4.1"
   },
   "devDependencies": {
-    "ava": "^4.3.3"
-  },
-  "ava": {
-    "files": [
-      "**/*.spec.js"
-    ]
+    "utap": "^0.1.2"
   },
   "scripts": {
-    "test": "ava -v"
+    "test": "find tests -type f -name '*.spec.js' -exec echo \\# utap-src:{} \\; -exec node {} \\; | utap"
   },
   "directories": {
     "test": "tests"

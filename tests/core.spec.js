@@ -1,4 +1,5 @@
-import test  from 'ava';
+import test from 'node:test';
+import assert from 'node:assert/strict';
 
 import { box } from 'quarx/box';
 import { delay }  from 'conclure/effects';
@@ -6,7 +7,7 @@ import { all }  from 'conclure/combinators';
 
 import { autorunAsync, subscribableAsync } from '../src/core.js';
 
-test('delayed reactive function call', t => new Promise(resolve => {
+test('delayed reactive function call', () => new Promise(resolve => {
   let count = 0;
 
   const a = box(5);
@@ -20,18 +21,18 @@ test('delayed reactive function call', t => new Promise(resolve => {
 
   const off = subscribe(res => {
     if (++count === 1) {
-      t.is(res, 5);
+      assert.equal(res, 5);
       a.set(7);
     }
     else if (count === 2) {
-      t.is(res, 7);
+      assert.equal(res, 7);
       off();
       resolve();
     }
   });
 }));
 
-test('reactive combinators', t => new Promise(resolve => {
+test('reactive combinators', () => new Promise(resolve => {
   let count = 0;
 
   const a = [box(5), box(6)];
@@ -48,22 +49,22 @@ test('reactive combinators', t => new Promise(resolve => {
 
   const off = subscribe(res => {
     if (++count === 1) {
-      t.deepEqual(res, [5, 6]);
+      assert.deepEqual(res, [5, 6]);
       a[0].set(7);
     }
     else if (count === 2) {
-      t.deepEqual(res, [7, 6]);
+      assert.deepEqual(res, [7, 6]);
       a[1].set(8);
     }
     else if (count === 3) {
-      t.deepEqual(res, [7, 8]);
+      assert.deepEqual(res, [7, 8]);
       off();
       resolve();
     }
   });
 }));
 
-test('autorunAsync', t => new Promise(resolve => {
+test('autorunAsync', () => new Promise(resolve => {
   let count = 0;
 
   const a = box(5);
@@ -73,18 +74,18 @@ test('autorunAsync', t => new Promise(resolve => {
     const aValue = a.get();
 
     if (++count === 1) {
-      t.is(aValue, 5);
+      assert.equal(aValue, 5);
       yield delay(1);   // without the delay setting a would create a circular dep here
       a.set(7);
     }
     else if (count === 2) {
-      t.is(aValue, 7);
+      assert.equal(aValue, 7);
       resolve();
     }
   });
 }));
 
-test('infinitely self-restarting flow', t => new Promise(resolve => {
+test('infinitely self-restarting flow', () => new Promise(resolve => {
   const b = box(0);
 
   function* f() {
@@ -95,15 +96,15 @@ test('infinitely self-restarting flow', t => new Promise(resolve => {
     name: 'InfiniteRestart',
     maxRestarts: 5,
     onError: e => {
-      t.true(e instanceof Error);
-      t.is(e.message, 'Maximum number of flow restarts (5) exceeded in InfiniteRestart')
+      assert(e instanceof Error);
+      assert.equal(e.message, 'Maximum number of flow restarts (5) exceeded in InfiniteRestart')
       off();
       resolve();
     }
   });
 }));
 
-test('subscribableAsync and reactive combinators', async t => {
+test('subscribableAsync and reactive combinators', async () => {
   const p = Promise.resolve(3);
   const factor = box(0);
 
@@ -126,11 +127,11 @@ test('subscribableAsync and reactive combinators', async t => {
   await p;
   factor.set(3);
 
-  t.deepEqual(results, ['STALE', 32, 77]);
+  assert.deepEqual(results, ['STALE', 32, 77]);
   off();
 });
 
-test('Stale flows are pushed into onStale channel in subscribableAsync', async t => {
+test('Stale flows are pushed into onStale channel in subscribableAsync', async () => {
   const p = Promise.resolve();
   const step = box(0);
 
@@ -150,6 +151,6 @@ test('Stale flows are pushed into onStale channel in subscribableAsync', async t
   step.set(2);
   await p;
 
-  t.deepEqual(results, ['STALE', 'Foo error', 'STALE', 42]);
+  assert.deepEqual(results, ['STALE', 'Foo error', 'STALE', 42]);
   off();
 });

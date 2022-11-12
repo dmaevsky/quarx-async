@@ -1,4 +1,5 @@
-import test  from 'ava';
+import test from 'node:test';
+import assert from 'node:assert/strict';
 
 import { autorun, Quarx } from 'quarx';
 import { box } from 'quarx/box';
@@ -7,7 +8,7 @@ import { isFlow } from 'conclure';
 import { computedAsync } from '../src/computed.js';
 import { autorunAsync } from '../src/core.js';
 
-test('simple reactive promise', t => new Promise(resolve => {
+test('simple reactive promise', () => new Promise(resolve => {
   const logs = [];
   const log = msg => logs.push(msg);
 
@@ -16,7 +17,7 @@ test('simple reactive promise', t => new Promise(resolve => {
   autorun(() => {
     try {
       log(obs.get());
-      t.deepEqual(logs, ['I am still running', 'I am done']);
+      assert.deepEqual(logs, ['I am still running', 'I am done']);
       resolve();
     }
     catch (e) {
@@ -28,7 +29,7 @@ test('simple reactive promise', t => new Promise(resolve => {
   });
 }));
 
-test('multi-step flow', t => new Promise(resolve => {
+test('multi-step flow', () => new Promise(resolve => {
   const logs = [];
   const log = msg => logs.push(msg);
 
@@ -53,7 +54,7 @@ test('multi-step flow', t => new Promise(resolve => {
         Promise.resolve().then(() => b.set(142));
       }
       else if (logs.length === 4) {
-        t.deepEqual(logs, ['STALE', 47, 'STALE', 147]);
+        assert.deepEqual(logs, ['STALE', 47, 'STALE', 147]);
         resolve();
       }
     }
@@ -64,7 +65,7 @@ test('multi-step flow', t => new Promise(resolve => {
   });
 }));
 
-test('circular dependency detection, async version', async t => {
+test('circular dependency detection, async version', async () => {
   const p1 = Promise.resolve(5);
   const p2 = Promise.resolve(0);
   const latch = box(p1, { name: 'latch' });
@@ -92,17 +93,17 @@ test('circular dependency detection, async version', async t => {
 
   await p1;
 
-  t.deepEqual(results, ['STALE', 11]);
+  assert.deepEqual(results, ['STALE', 11]);
 
   latch.set(p2);
-  t.deepEqual(results, ['STALE', 11, 'STALE']);
+  assert.deepEqual(results, ['STALE', 11, 'STALE']);
   await p2;
 
   // c1 and c2 are mutually locked in a STALE state -> no updates of results after await
-  t.deepEqual(results, ['STALE', 11, 'STALE', 'STALE']);
+  assert.deepEqual(results, ['STALE', 11, 'STALE', 'STALE']);
 
   latch.set(42);
-  t.deepEqual(results, ['STALE', 11, 'STALE', 'STALE', 48]);
+  assert.deepEqual(results, ['STALE', 11, 'STALE', 'STALE', 48]);
 
   const originalQuarxError = Quarx.error;
 
@@ -110,10 +111,10 @@ test('circular dependency detection, async version', async t => {
   Quarx.error = (...args) => quarxErrors.push(args);
 
   latch.set(0);   // BOOM
-  t.deepEqual(results, ['STALE', 11, 'STALE', 'STALE', 48, '[Quarx ERROR]:cycle detected:b:b.1:a:a.1:b']);
+  assert.deepEqual(results, ['STALE', 11, 'STALE', 'STALE', 48, '[Quarx ERROR]:cycle detected:b:b.1:a:a.1:b']);
 
   Quarx.error = originalQuarxError;
 
-  t.is(quarxErrors.length, 4);
+  assert.equal(quarxErrors.length, 4);
   off();
 });
