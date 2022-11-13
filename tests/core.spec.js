@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
+import { createAtom } from 'quarx';
 import { box } from 'quarx/box';
 import { delay }  from 'conclure/effects';
 import { all }  from 'conclure/combinators';
@@ -152,5 +153,45 @@ test('Stale flows are pushed into onStale channel in subscribableAsync', async (
   await p;
 
   assert.deepEqual(results, ['STALE', 'Foo error', 'STALE', 42]);
+  off();
+});
+
+test('Atoms are kept observed till the conclusion of the flow in subscribableAsync', async () => {
+  const results = [];
+
+  const atom = createAtom(() => {
+    results.push('I am observed');
+    return () => {
+      results.push('I am NOT observed anymore');
+    }
+  });
+
+  const promises = [Promise.resolve(5), Promise.resolve(6)];
+
+  const f = idx => function* f() {
+    const a = yield promises[idx];
+    if (idx === 0) atom.reportObserved();
+    return a;
+  }
+
+  const step = box(0);
+
+  const { subscribe } = subscribableAsync(() => {
+    const path = f(step.get());
+    return path();
+  });
+
+  const off = subscribe(r => results.push(r), e => results.push(e), _ => results.push('STALE'));
+  assert.deepEqual(results, ['STALE']);
+
+  await promises[0];
+  assert.deepEqual(results, ['STALE', 'I am observed', 5]);
+
+  step.set(1);
+  assert.deepEqual(results, ['STALE', 'I am observed', 5, 'STALE']);
+
+  await promises[1];
+  assert.deepEqual(results, ['STALE', 'I am observed', 5, 'STALE', 'I am NOT observed anymore', 6]);
+
   off();
 });
